@@ -647,6 +647,14 @@ class UCD92xx:
 
         return round(value/(2**self.exponent))                
 
+    def send_byte(self, command):
+        self.set_control_signal()
+
+        self.i2c_slave.write([command], relax=True, start=True)
+
+        self.clear_control_signal()
+        return None
+
     def write_byte(self, command, data: int):
         self.set_control_signal()
 
@@ -800,63 +808,57 @@ class UCD92xx:
         encoded_value = self.encode_ulin16(data)
         self.write_word(self.commands.power_good_off, encoded_value)
         return None
+
+    def store_default_all (self):
+        self.send_byte(self.commands.store_default_all)
+        return None
                                        
     def close(self):
         self.i2c_slave.flush()
         self.i2c_master.close()
 
-u0 = UCD92xx(0x34)
 
-voltage = 3.3
-u0.set_page(3) # rail 4
+if __name__ == "__main__":
+    u0 = UCD92xx(0x34)
 
-print ("====== Before setting ======")
-print(f"VOUT_MAX = {u0.get_vout_max()}")
-print(f"VOUT_COMMAND = {u0.get_vout_command()}")
-print(f"VOUT_CAL_OFFSET = {u0.get_vout_cal_offset()}")
-print(f"VOUT_MARGIN_HIGH = {u0.get_vout_margin_high()}")
-print(f"VOUT_MARGIN_LOW = {u0.get_vout_margin_low()}")
-print(f"VOUT_OV_FAULT_LIMIT = {u0.get_vout_ov_fault_limit()}")
-print(f"VOUT_UV_FAULT_LIMIT = {u0.get_vout_uv_fault_limit()}")
-print(f"POWER_GOOD_ON = {u0.get_power_good_on()}")
-print(f"POWER_GOOD_OFF = {u0.get_power_good_off()}")
+    voltage = 3.3
+    u0.set_page(3) # rail 4
 
-print ("====== Setting ======")
-u0.set_vout_max(voltage * 1.3)
-u0.set_vout_margin_high(voltage * 1.15)
-u0.set_vout_margin_low(voltage * 0.85)
-u0.set_vout_ov_fault_limit(voltage * 1.15)
-u0.set_vout_uv_fault_limit(voltage * 0.85)
-u0.set_power_good_on(voltage * 0.95)
-u0.set_power_good_off(voltage * 0.85)
+    print ("====== Before setting ======")
+    print(f"VOUT_MAX = {u0.get_vout_max()}")
+    print(f"VOUT_COMMAND = {u0.get_vout_command()}")
+    print(f"VOUT_CAL_OFFSET = {u0.get_vout_cal_offset()}")
+    print(f"VOUT_MARGIN_HIGH = {u0.get_vout_margin_high()}")
+    print(f"VOUT_MARGIN_LOW = {u0.get_vout_margin_low()}")
+    print(f"VOUT_OV_FAULT_LIMIT = {u0.get_vout_ov_fault_limit()}")
+    print(f"VOUT_UV_FAULT_LIMIT = {u0.get_vout_uv_fault_limit()}")
+    print(f"POWER_GOOD_ON = {u0.get_power_good_on()}")
+    print(f"POWER_GOOD_OFF = {u0.get_power_good_off()}")
 
-u0.set_vout_command(voltage*0.95)
+    print ("====== Setting ======")
+    u0.set_vout_max(voltage * 1.3)
+    u0.set_vout_margin_high(voltage * 1.15)
+    u0.set_vout_margin_low(voltage * 0.85)
+    u0.set_vout_ov_fault_limit(voltage * 1.15)
+    u0.set_vout_uv_fault_limit(voltage * 0.85)
+    u0.set_power_good_on(voltage * 0.95)
+    u0.set_power_good_off(voltage * 0.85)
 
-print ("====== After setting ======")
-print(f"VOUT_MAX = {u0.get_vout_max()}")
-print(f"VOUT_COMMAND = {u0.get_vout_command()}")
-print(f"VOUT_CAL_OFFSET = {u0.get_vout_cal_offset()}")
-print(f"VOUT_MARGIN_HIGH = {u0.get_vout_margin_high()}")
-print(f"VOUT_MARGIN_LOW = {u0.get_vout_margin_low()}")
-print(f"VOUT_OV_FAULT_LIMIT = {u0.get_vout_ov_fault_limit()}")
-print(f"VOUT_UV_FAULT_LIMIT = {u0.get_vout_uv_fault_limit()}")
-print(f"POWER_GOOD_ON = {u0.get_power_good_on()}")
-print(f"POWER_GOOD_OFF = {u0.get_power_good_off()}")
+    u0.set_vout_command(voltage)
 
-u0.close()
+    print ("====== After setting ======")
+    print(f"VOUT_MAX = {u0.get_vout_max()}")
+    print(f"VOUT_COMMAND = {u0.get_vout_command()}")
+    print(f"VOUT_CAL_OFFSET = {u0.get_vout_cal_offset()}")
+    print(f"VOUT_MARGIN_HIGH = {u0.get_vout_margin_high()}")
+    print(f"VOUT_MARGIN_LOW = {u0.get_vout_margin_low()}")
+    print(f"VOUT_OV_FAULT_LIMIT = {u0.get_vout_ov_fault_limit()}")
+    print(f"VOUT_UV_FAULT_LIMIT = {u0.get_vout_uv_fault_limit()}")
+    print(f"POWER_GOOD_ON = {u0.get_power_good_on()}")
+    print(f"POWER_GOOD_OFF = {u0.get_power_good_off()}")
 
-# ftdi_options = {'frequency': 1000, 'clockstretching': False, 'initial': 0xff78, 'direction': 0xff78}
-# i2c = I2cController()
-# i2c.configure('ftdi:///1')
+    accept = int(input("Please measure the voltage then press 1 to save: "))
+    if accept == 1:
+        u0.store_default_all()
 
-# i2c_master = I2cController()
-# i2c_master.configure('ftdi://ftdi:232h/1', **ftdi_options)
-
-# slave = i2c_master.get_port(0x34)
-
-# slave.write([0x20], relax=False, start=True)
-# vout_mode = slave.read(2, relax=True, start=True)
-# print (vout_mode)
-
-# slave.flush()
-# i2c_master.close()
+    u0.close()
